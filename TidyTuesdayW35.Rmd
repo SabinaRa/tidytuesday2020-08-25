@@ -1,0 +1,90 @@
+---
+title: "TidyTuesday Chopped"
+output: html_document
+---
+TidyTuesday Chopped 2020-08-25 |
+[Description](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-08-25/readme.md) |
+Contributor: Sabina Rako, Twitter: @ra_sabina]
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidytuesdayR)
+library(tidyverse)
+library(skimr)
+library(stringr)
+library(GGally)
+library(tvthemes)
+library(directlabels)
+library(extrafont)
+library(cowplot)
+library(forcats)
+
+loadfonts()
+
+```
+
+
+## Importing data
+
+```{r include=FALSE}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 35)
+chopped <- tuesdata$chopped
+```
+
+## Exploring data
+
+```{r}
+skim(chopped)
+
+```
+```{r}
+# Changing date variable
+chopped$air_date <- lubridate::mdy(chopped$air_date)
+
+#
+seasons <- chopped %>% 
+            select (season, air_date) %>% 
+            mutate(air_date = as.Date(air_date, "%B %d, %Y"))  %>%
+            group_by(season) %>% 
+            summarise(start_date = min(air_date), finale = max(air_date)) %>% 
+            mutate(season=factor(season, season))
+
+finaleratings <- chopped %>% 
+            select(air_date, episode_rating, season, episode_name) %>% 
+            mutate(air_date = as.Date(air_date, "%B %d, %Y"))  %>%
+            dplyr::inner_join(seasons, by = c("air_date" = "finale")) %>% 
+            select(air_date, episode_rating, season.x, episode_name) %>% 
+            arrange(desc(episode_rating)) %>% 
+            filter(episode_rating >= 9.0) %>%
+            mutate(season.x=factor(season.x, season.x))
+
+
+  
+
+topRatedEpisodes <- chopped  %>% 
+            arrange(desc(episode_rating)) %>%
+            slice_max(episode_rating, n = 1) %>% 
+            mutate(air_date = as.Date(air_date, "%B %d, %Y")) %>% 
+            select(air_date, season)
+
+#Plot - could be optimazed more :)
+p <- ggplot(seasons) +
+      geom_segment( aes(x=start_date, xend=finale, y=season, yend=season), color="grey", size=2, alpha = 0.7) +
+      geom_point( aes(x=finale, y=season), color=rgb(0.2,0.7,0.1,0.6), size=2) + 
+      scale_x_date(breaks ="1 year", date_labels ="%Y") + theme_void()
+
+#Annotation
+p + annotate(geom = "point", x=topRatedEpisodes$air_date, y=topRatedEpisodes$season, size = 2, alpha = 0.5, color="red") + annotate(geom = "text", x=seasons$start_date - 100, y=seasons$season, label=seasons$season, size = 5) + annotate("rect", xmin = as.Date("2009-01-01"), xmax = as.Date("2009-12-31"), ymin = -1, ymax = 48, alpha = .2, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2009-06-01"), y=47, label="2009", size = 8) + annotate("rect", xmin = as.Date("2010-01-01"), xmax = as.Date("2010-12-31"), ymin = -1, ymax = 48, alpha = .1, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2010-06-01"), y=47, label="2010", size = 8) + annotate("rect", xmin = as.Date("2011-01-01"), xmax = as.Date("2011-12-31"), ymin = -1, ymax = 48, alpha = .2, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2011-06-01"), y=47, label="2011", size = 8) + annotate("rect", xmin = as.Date("2012-01-01"), xmax = as.Date("2012-12-31"), ymin = -1, ymax = 48, alpha = .1, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2012-06-01"), y=47, label="2012", size = 8) + annotate("rect", xmin = as.Date("2013-01-01"), xmax = as.Date("2013-12-31"), ymin = -1, ymax = 48, alpha = .2, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2013-06-01"), y=47, label="2013", size = 8) + annotate("rect", xmin = as.Date("2014-01-01"), xmax = as.Date("2014-12-31"), ymin = -1, ymax = 48, alpha = .1, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2014-06-01"), y=47, label="2014", size = 8) + annotate("rect", xmin = as.Date("2015-01-01"), xmax = as.Date("2015-12-31"), ymin = -1, ymax = 48, alpha = .2, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2015-06-01"), y=47, label="2015", size = 8)  + annotate("rect", xmin = as.Date("2016-01-01"), xmax = as.Date("2016-12-31"), ymin = -1, ymax = 48, alpha = .1, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2016-06-01"), y=47, label="2016", size = 8) + annotate("rect", xmin = as.Date("2017-01-01"), xmax = as.Date("2017-12-31"), ymin = -1, ymax = 48, alpha = .2, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2017-06-01"), y=47, label="2017", size = 8)  + annotate("rect", xmin = as.Date("2018-01-01"), xmax = as.Date("2018-12-31"), ymin = -1, ymax = 48, alpha = .1, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2018-06-01"), y=47, label="2018", size = 8)  + annotate("rect", xmin = as.Date("2019-01-01"), xmax = as.Date("2019-12-31"), ymin = -1, ymax = 48, alpha = .2, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2019-06-01"), y=47, label="2019", size = 8)  + annotate("rect", xmin = as.Date("2020-01-01"), xmax = as.Date("2020-12-31"), ymin = -1, ymax = 48, alpha = .1, fill="#fdbb6d") + annotate(geom = "text", x=as.Date("2020-06-01"), y=47, label="2020", size = 8) + labs(title = " Chopped: Are season's final episodes also the highest rated ones? No.", caption = "Over time, seasons tend to last longer and only two highest rated episodes (red dots with IMDB rating of 9.2) are also season's final episodes (green dots).  ") + theme(plot.title = element_text(size = 30, face = "bold"), plot.caption = element_text(size = 17 )) + theme(plot.background = element_rect(fill = "#f2f2f2")) 
+
+
+
+#Saving plot
+ggsave("TTweek35.png")
+
+
+```
+
+
+
+
+
